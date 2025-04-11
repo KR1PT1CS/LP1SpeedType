@@ -1,7 +1,5 @@
 using System;
 using System.IO;
-using System.Linq;
-using Humanizer;
 
 namespace SpeedType
 {
@@ -26,7 +24,8 @@ namespace SpeedType
         /// </remarks>
         public SentenceProvider()
         {
-            random = // ////////// => TO IMPLEMENT <= //////////// //
+            random = new Random();
+            //random = // ////////// => TO IMPLEMENT <= //////////// //
             
             string directoryPath = Path.GetFullPath(
                 Path.Combine(
@@ -37,7 +36,18 @@ namespace SpeedType
 
             if (File.Exists(filePath))
             {
-                sentences = // ////////// => TO IMPLEMENT <= //////////// //
+                StreamReader sr = File.OpenText(filePath);
+                int countLines = sr.ReadToEnd().Split("\n").Length;
+                sr.Close();
+                sr = File.OpenText(filePath);
+                sentences = new string[countLines];
+                string s;
+                int index = 0;
+                while ((s = sr.ReadLine()) != null)
+                {
+                    sentences[index] = s;
+                    index++;
+                }
             }
             else
             {
@@ -55,7 +65,7 @@ namespace SpeedType
         /// </returns>
         public string GetRandomSentence()
         {
-            // ////////// => TO IMPLEMENT <= //////////// //
+            return sentences[random.Next(0, sentences.Length)];
         }
     }
 }

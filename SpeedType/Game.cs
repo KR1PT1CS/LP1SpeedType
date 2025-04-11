@@ -1,6 +1,8 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
+using Humanizer;
 using Spectre.Console;
 
 namespace SpeedType
@@ -30,7 +32,9 @@ namespace SpeedType
         /// </summary>
         public Game()
         {
-            // ////////// => TO IMPLEMENT <= //////////// //
+            sentenceProvider = new SentenceProvider();
+            gameStats = new GameResult[5];
+            evaluator = new Evaluator();
         }
 
         /// <summary>
@@ -53,7 +57,7 @@ namespace SpeedType
                 string choice = AnsiConsole.Prompt(
                     new SelectionPrompt<string>()
                         .Title("[bold yellow]Speed Type[/]")
-                        .AddChoices("Start Game", "View Game Stats", "Quit"));
+                        .AddChoices("Start Game", "View Game Stats", "View Bar Chart", "Quit"));
 
                 switch (choice)
                 {
@@ -62,6 +66,9 @@ namespace SpeedType
                         break;
                     case "View Game Stats":
                         ShowGameStats();
+                        break;
+                    case "View Bar Chart":
+                        ShowBarChart();
                         break;
                     case "Quit":
                         return;
@@ -85,7 +92,7 @@ namespace SpeedType
         private void StartGame()
         {
             // The sentence that will be presented to the player.
-            string sentence = // ////////// => TO IMPLEMENT <= //////////// //
+            string sentence = new SentenceProvider().GetRandomSentence().Humanize();
 
             AnsiConsole.Clear();
             AnsiConsole.MarkupLine("[bold green]Type This Sentence:[/]");
@@ -104,20 +111,21 @@ namespace SpeedType
 
             // The words per minute (WPM) calculated based on the time taken 
             // and the user input.
-            double wpm = // ////////// => TO IMPLEMENT <= //////////// //
-
+            double wpm = evaluator.CalculateWPM(userInput, timeTaken);
+            
             // The accuracy percentage calculated based on the user's input and
             // the original sentence.
-            int accuracy = // ////////// => TO IMPLEMENT <= //////////// //
+            int accuracy = evaluator.CalculateAccuracy(userInput, sentence);
 
             // Shift existing entries
             for (int i = gameStats.Length - 1; i > 0; i--)
             {
                 // ////////// => TO IMPLEMENT <= //////////// //
+                gameStats[i] = gameStats[i - 1];
             }
 
             // Add new result at the beginning
-            gameStats[0] = // ////////// => TO IMPLEMENT <= //////////// //
+            gameStats[0] = new GameResult(wpm, accuracy, timeTaken);
 
             AnsiConsole.MarkupLine("\n[bold yellow]Results:[/]");
             AnsiConsole.MarkupLine($"[bold]Time Taken:[/] {timeTaken:F2} " +
@@ -152,19 +160,40 @@ namespace SpeedType
 
             for (int i = 0; i < gameStats.Length; i++)
             {
-                if (gameStats[i] == null)
-                {
-                    // ////////// => TO IMPLEMENT <= //////////// //
-                }
-
-                // Add row to table
-                // Table.AddRow() only accepts strings
-                // ////////// => TO IMPLEMENT <= //////////// //
+                if (gameStats[i] == null) break;
+                table.AddRow($"{i+1}", $"{gameStats[i].WPM:F2}", $"{gameStats[i].Accuracy}%", $"{gameStats[i].TimeTaken:F2}");
             }
 
             AnsiConsole.Write(table);
             AnsiConsole.Markup("\n[bold green]Press Enter to Return to " +
                 "Menu...[/]");
+            Console.ReadLine();
+        }
+
+        private void ShowBarChart()
+        {
+            AnsiConsole.Clear();
+            AnsiConsole.MarkupLine("\n[bold yellow]Bar chart:[/]");
+            BarChart barChart = new BarChart().Width(60);
+
+            int[] numbers = new int[11];
+            for (int i = 0; i < gameStats.Length; i++)
+            {
+                if (gameStats[i] == null) break;
+                int pos = gameStats[i].Accuracy / 10;
+                numbers[pos]++;
+            }
+
+            Random rand = new Random();
+            string[] values = new string[11] {"0%-9%", "10%-19%", "20%-29%", "30%-39%", "40%-49%", "50%-59%", "60%-69%", "70%-79%", "80%-89%", "90%-99%", "100%"};
+            for (int i = 0; i < 11; i++)
+            {
+                barChart.AddItem(values[i], numbers[i], new Color((byte)rand.Next(0, 255), (byte)rand.Next(0, 255), (byte)rand.Next(0, 255)));
+            }
+            
+            AnsiConsole.Write(barChart);
+            AnsiConsole.Markup("\n[bold green]Press Enter to Return to " +
+                               "Menu...[/]");
             Console.ReadLine();
         }
     }
